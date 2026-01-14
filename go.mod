@@ -1,3 +1,3 @@
-module github.com/giantswarm/REPOSITORY_NAME
+module github.com/giantswarm/logql-lint
 
 go 1.25
