@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/grafana/loki/v3/pkg/logql/syntax"
@@ -228,7 +229,7 @@ func (v *Validator) validateAggregation(file, group, ruleName string, agg *synta
 	if grouping.Without {
 		// Using 'without' - check that mandatory labels are not excluded
 		for _, label := range grouping.Groups {
-			if contains(v.config.MandatoryLabels, label) {
+			if slices.Contains(v.config.MandatoryLabels, label) {
 				v.errors = append(v.errors, ValidationError{
 					File:        file,
 					Group:       group,
@@ -242,7 +243,7 @@ func (v *Validator) validateAggregation(file, group, ruleName string, agg *synta
 	} else {
 		// Using 'by' - check that all mandatory labels are included
 		for _, mandatoryLabel := range v.config.MandatoryLabels {
-			if !contains(grouping.Groups, mandatoryLabel) {
+			if !slices.Contains(grouping.Groups, mandatoryLabel) {
 				v.errors = append(v.errors, ValidationError{
 					File:        file,
 					Group:       group,
@@ -257,15 +258,6 @@ func (v *Validator) validateAggregation(file, group, ruleName string, agg *synta
 }
 
 // Helper functions
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
 
 func printHeader(config *Config) {
 	fmt.Println("==================================================")
