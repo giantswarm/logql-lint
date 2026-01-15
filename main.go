@@ -1,15 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/grafana/loki/v3/pkg/logql/syntax"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
@@ -70,32 +69,51 @@ func NewValidator(config *Config) *Validator {
 	}
 }
 
+var (
+	mandatoryLabels []string
+	verbose         bool
+)
+
 func main() {
-	// Parse command line flags
-	var (
-		mandatoryLabels = flag.String("labels", "cluster_id,installation",
-			"Comma-separated list of mandatory labels")
-		verbose = flag.Bool("v", false, "Verbose output")
-		help    = flag.Bool("h", false, "Show help")
-	)
-	flag.Parse()
+	var rootCmd = &cobra.Command{
+		Use:   "logql-lint [files...]",
+		Short: "LogQL Aggregation Label Checker",
+		Long: `Validates that LogQL aggregations preserve mandatory labels.
 
-	if *help {
-		printHelp()
-		os.Exit(ExitSuccess)
+This tool checks PrometheusRule files (or rule group YAML files) to ensure
+that all aggregation operations preserve the specified mandatory labels.`,
+		Example: `  # Check a single file
+  logql-lint rules.yml
+
+  # Check multiple files
+  logql-lint rules1.yml rules2.yml
+
+  # Check all .logs.yml files
+  logql-lint '**/*.logs.yml'
+
+  # Custom mandatory labels
+  logql-lint --labels cluster_id,installation,region rules.yml
+
+  # Verbose output
+  logql-lint -v rules.yml`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: runValidation,
 	}
 
-	// Parse mandatory labels
-	config := &Config{
-		MandatoryLabels: strings.Split(*mandatoryLabels, ","),
-	}
+	rootCmd.Flags().StringSliceVarP(&mandatoryLabels, "labels", "l", []string{"cluster_id", "installation"},
+		"Mandatory labels that must be preserved in aggregations")
+	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false,
+		"Verbose output")
 
-	// Get files to validate
-	files := flag.Args()
-	if len(files) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: No files specified")
-		printHelp()
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(ExitError)
+	}
+}
+
+func runValidation(cmd *cobra.Command, args []string) error {
+	// Create config
+	config := &Config{
+		MandatoryLabels: mandatoryLabels,
 	}
 
 	validator := NewValidator(config)
@@ -105,7 +123,7 @@ func main() {
 
 	// Validate each file
 	totalFiles := 0
-	for _, pattern := range files {
+	for _, pattern := range args {
 		matches, err := filepath.Glob(pattern)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: Invalid pattern %s: %v\n", pattern, err)
@@ -113,7 +131,7 @@ func main() {
 		}
 
 		for _, file := range matches {
-			if *verbose {
+			if verbose {
 				fmt.Printf("Checking: %s\n", file)
 			}
 			if err := validator.ValidateFile(file); err != nil {
@@ -129,7 +147,8 @@ func main() {
 	if len(validator.errors) > 0 {
 		os.Exit(ExitError)
 	}
-	os.Exit(ExitSuccess)
+
+	return nil
 }
 
 // ValidateFile validates a single rule file
@@ -304,32 +323,4 @@ func printResults(errors []ValidationError, totalFiles int) {
 	}
 
 	fmt.Println("Please fix the aggregations to include all mandatory labels.")
-}
-
-func printHelp() {
-	fmt.Println("LogQL Aggregation Label Checker")
-	fmt.Println()
-	fmt.Println("Validates that LogQL aggregations preserve mandatory labels.")
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Println("  logql-lint [flags] <files...>")
-	fmt.Println()
-	fmt.Println("Flags:")
-	flag.PrintDefaults()
-	fmt.Println()
-	fmt.Println("Examples:")
-	fmt.Println("  # Check a single file")
-	fmt.Println("  logql-lint rules.yml")
-	fmt.Println()
-	fmt.Println("  # Check multiple files")
-	fmt.Println("  logql-lint rules1.yml rules2.yml")
-	fmt.Println()
-	fmt.Println("  # Check all .logs.yml files")
-	fmt.Println("  logql-lint '**/*.logs.yml'")
-	fmt.Println()
-	fmt.Println("  # Custom mandatory labels")
-	fmt.Println("  logql-lint -labels cluster,env,region rules.yml")
-	fmt.Println()
-	fmt.Println("  # Verbose output")
-	fmt.Println("  logql-lint -v rules.yml")
 }
