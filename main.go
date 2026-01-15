@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/fatih/color"
 	"github.com/grafana/loki/v3/pkg/logql/syntax"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/spf13/cobra"
@@ -297,8 +298,9 @@ func printResults(errors []ValidationError, totalFiles int) {
 	fmt.Printf("Files checked: %d\n", totalFiles)
 
 	if len(errors) == 0 {
-		fmt.Println("\033[0;32m✓ All checks passed!\033[0m")
-		fmt.Println("\033[0;32m✓ All aggregations preserve mandatory labels\033[0m")
+		green := color.New(color.FgGreen)
+		green.Println("✓ All checks passed!")
+		green.Println("✓ All aggregations preserve mandatory labels")
 		return
 	}
 
@@ -308,16 +310,23 @@ func printResults(errors []ValidationError, totalFiles int) {
 		fileErrors[err.File] = append(fileErrors[err.File], err)
 	}
 
-	fmt.Printf("\033[0;31m✗ Found %d error(s) in %d file(s)\033[0m\n\n", len(errors), len(fileErrors))
+	red := color.New(color.FgRed)
+	red.Printf("✗ Found %d error(s) in %d file(s)\n\n", len(errors), len(fileErrors))
 
 	// Print errors grouped by file
+	redBold := color.New(color.FgRed, color.Bold)
+	yellow := color.New(color.FgYellow, color.Bold)
+	
 	for file, errs := range fileErrors {
-		fmt.Printf("\033[0;31m✗\033[0m %s\n", file)
+		red.Print("✗ ")
+		fmt.Println(file)
 		for _, err := range errs {
 			fmt.Printf("  Group: %s\n", err.Group)
 			fmt.Printf("  Rule: %s\n", err.Rule)
-			fmt.Printf("  \033[1;33mAggregation:\033[0m %s\n", err.Aggregation)
-			fmt.Printf("  \033[0;31mError:\033[0m %s\n", err.Message)
+			yellow.Print("  Aggregation: ")
+			fmt.Println(err.Aggregation)
+			redBold.Print("  Error: ")
+			fmt.Println(err.Message)
 			fmt.Println()
 		}
 	}
