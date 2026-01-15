@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/grafana/loki/v3/pkg/logql/syntax"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,28 +29,14 @@ func DefaultConfig() *Config {
 	}
 }
 
-// PrometheusRule represents the structure of a Prometheus rule file
-type PrometheusRule struct {
-	APIVersion string `yaml:"apiVersion"`
-	Kind       string `yaml:"kind"`
-	Metadata   struct {
-		Name      string            `yaml:"name"`
-		Namespace string            `yaml:"namespace"`
-		Labels    map[string]string `yaml:"labels"`
-	} `yaml:"metadata"`
-	Spec struct {
-		Groups []RuleGroup `yaml:"groups"`
-	} `yaml:"spec"`
+// SimpleRuleGroup represents a rule group for plain YAML parsing
+type SimpleRuleGroup struct {
+	Name  string       `yaml:"name"`
+	Rules []SimpleRule `yaml:"rules"`
 }
 
-// RuleGroup represents a group of rules
-type RuleGroup struct {
-	Name  string `yaml:"name"`
-	Rules []Rule `yaml:"rules"`
-}
-
-// Rule represents a single alerting or recording rule
-type Rule struct {
+// SimpleRule represents a single rule for plain YAML parsing
+type SimpleRule struct {
 	Alert       string            `yaml:"alert,omitempty"`
 	Record      string            `yaml:"record,omitempty"`
 	Expr        string            `yaml:"expr"`
@@ -153,7 +140,7 @@ func (v *Validator) ValidateFile(filepath string) error {
 	}
 
 	// Try to parse as PrometheusRule CRD first
-	var rule PrometheusRule
+	var rule monitoringv1.PrometheusRule
 	if err := yaml.Unmarshal(data, &rule); err == nil && rule.Kind == "PrometheusRule" {
 		// It's a full CRD
 		for _, group := range rule.Spec.Groups {
@@ -162,15 +149,15 @@ func (v *Validator) ValidateFile(filepath string) error {
 				if ruleName == "" {
 					ruleName = r.Record
 				}
-				v.validateRule(filepath, group.Name, ruleName, r.Expr)
+				v.validateRule(filepath, group.Name, ruleName, r.Expr.String())
 			}
 		}
 		return nil
 	}
 
-	// Try to parse as just a spec (groups only)
+	// Try to parse as just a spec (groups only) - use simple types for plain YAML
 	var spec struct {
-		Groups []RuleGroup `yaml:"groups"`
+		Groups []SimpleRuleGroup `yaml:"groups"`
 	}
 	if err := yaml.Unmarshal(data, &spec); err != nil {
 		return fmt.Errorf("failed to parse YAML: %w", err)
