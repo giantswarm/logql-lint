@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +17,12 @@ import (
 const (
 	ExitSuccess = 0
 	ExitError   = 1
+)
+
+var (
+	// ErrValidationFailed is returned when validation fails
+	// This is a sentinel error to distinguish validation failures from other errors
+	ErrValidationFailed = errors.New("validation failed")
 )
 
 // Config holds the validation configuration
@@ -111,9 +118,12 @@ that all aggregation operations preserve the specified mandatory labels.`,
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false,
 		"Verbose output")
 
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		os.Exit(ExitError)
 	}
+	
+	os.Exit(ExitSuccess)
 }
 
 func runValidation(cmd *cobra.Command, args []string) error {
@@ -151,7 +161,11 @@ func runValidation(cmd *cobra.Command, args []string) error {
 	printResults(validator.errors, totalFiles)
 
 	if len(validator.errors) > 0 {
-		os.Exit(ExitError)
+		// Silence cobra's default error/usage output for validation failures
+		// since we already printed detailed validation results
+		cmd.SilenceErrors = true
+		cmd.SilenceUsage = true
+		return ErrValidationFailed
 	}
 
 	return nil
