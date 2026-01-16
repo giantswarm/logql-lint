@@ -30,13 +30,18 @@ func DefaultConfig() *Config {
 	}
 }
 
-// SimpleRuleGroup represents a rule group for plain YAML parsing
+// SimpleRuleGroup represents a rule group for plain YAML parsing.
+// We need this because prometheus-operator's RuleGroup uses intstr.IntOrString
+// for the Expr field, which doesn't unmarshal properly from plain YAML files
+// with multiline strings. This type is only used for non-CRD rule files.
 type SimpleRuleGroup struct {
 	Name  string       `yaml:"name"`
 	Rules []SimpleRule `yaml:"rules"`
 }
 
-// SimpleRule represents a single rule for plain YAML parsing
+// SimpleRule represents a single rule for plain YAML parsing.
+// This uses a plain string for Expr instead of intstr.IntOrString,
+// allowing proper unmarshaling from plain YAML rule files.
 type SimpleRule struct {
 	Alert       string            `yaml:"alert,omitempty"`
 	Record      string            `yaml:"record,omitempty"`
@@ -160,7 +165,8 @@ func (v *Validator) ValidateFile(filepath string) error {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	// Try to parse as PrometheusRule CRD first
+	// Try to parse as PrometheusRule CRD first (has apiVersion and kind)
+	// These use the official prometheus-operator types
 	var rule monitoringv1.PrometheusRule
 	if err := yaml.Unmarshal(data, &rule); err == nil && rule.Kind == "PrometheusRule" {
 		// It's a full CRD
@@ -176,7 +182,9 @@ func (v *Validator) ValidateFile(filepath string) error {
 		return nil
 	}
 
-	// Try to parse as just a spec (groups only) - use simple types for plain YAML
+	// Try to parse as just a spec (groups only) - plain YAML rule files
+	// We use SimpleRuleGroup here because prometheus-operator's types use
+	// intstr.IntOrString which doesn't unmarshal properly from plain YAML
 	var spec struct {
 		Groups []SimpleRuleGroup `yaml:"groups"`
 	}
