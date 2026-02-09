@@ -1,29 +1,124 @@
-# General Go template repository
+# LogQL Linter
 
-This is a general template repository containing some basic files every GitHub repo owned by Giant Swarm should have.
+A tool for validating LogQL rules
 
-Note also these more specific repositories:
+## Features
 
-- [template-app](https://github.com/giantswarm/template-app)
-- [gitops-template](https://github.com/giantswarm/gitops-template)
-- [python-app-template](https://github.com/giantswarm/python-app-template)
+Currently only supports checking for a list of mandatory labels in aggregations.
 
-## Creating a new repository
+## Usage
 
-Please do not use the `Use this template` function in the GitHub web UI.
+### Basic Usage
 
-Check out the according [handbook article](https://handbook.giantswarm.io/docs/dev-and-releng/repository/go/) for better instructions.
+```bash
+# Check a single file
+./logql-lint rules.yml
 
-### Some suggestions for your README
+# Check multiple files
+./logql-lint rules1.yml rules2.yml
 
-After you have created your new repository, you may want to add some of these badges to the top of your README.
+# Check all .logs.yml files in a directory (requires shell expansion)
+./logql-lint path/to/rules/**/*.logs.yml
 
-- **CircleCI:** After enabling builds for this repo via [this link](https://circleci.com/setup-project/gh/giantswarm/logql-lint), you can find badge code on [this page](https://app.circleci.com/settings/project/github/giantswarm/logql-lint/status-badges).
+# Verbose output
+./logql-lint -v rules.yml
+```
 
-- **Go reference:** use [this helper](https://pkg.go.dev/badge/) to create the markdown code.
+### Custom Mandatory Labels
 
-- **Go report card:** enter the module name on the [front page](https://goreportcard.com/) and hit "Generate report". Then use this markdown code for your badge: `[![Go report card](https://goreportcard.com/badge/github.com/giantswarm/logql-lint)](https://goreportcard.com/report/github.com/giantswarm/logql-lint)`
+```bash
+# Specify custom mandatory labels
+./logql-lint -labels cluster,env,region rules.yml
 
-- **OpenSSF Scorecard Report:** for public repos only: `[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/giantswarm/{APP-NAME}/badge)](https://securityscorecards.dev/viewer/?uri=github.com/giantswarm/{APP-NAME})`
+# Default labels are: cluster_id,installation
+```
 
-- **Sourcegraph "used by N projects" badge**: for public Go repos only: `[![Sourcegraph](https://sourcegraph.com/github.com/giantswarm/logql-lint/-/badge.svg)](https://sourcegraph.com/github.com/giantswarm/logql-lint)`
+## How It Works
+
+```
+YAML File → Parse YAML → Extract LogQL → Loki Parser → AST → Walk Tree → Validate → Report
+```
+
+1. **Read YAML** - Parses PrometheusRule CRD files
+2. **Extract Queries** - Gets expr fields from rules
+3. **Parse LogQL** - Uses Loki's official parser to create AST
+4. **Walk AST** - Finds all VectorAggregationExpr nodes
+5. **Validate** - Checks label preservation rules
+6. **Report** - Groups errors by file with clear messages
+
+## Validation Rules
+
+### Rule 1: Aggregations Must Have Grouping
+```logql
+# ❌ INVALID - No grouping clause
+sum(rate({job="test"}[5m]))
+
+# ✅ VALID - Has grouping
+sum(rate({job="test"}[5m])) by (cluster_id, installation, pipeline, provider)
+```
+
+### Rule 2: 'by' Must Include All Mandatory Labels
+```logql
+# ❌ INVALID - Missing mandatory labels
+sum(rate({job="test"}[5m])) by (cluster_id)
+
+# ✅ VALID - All mandatory labels present
+sum(rate({job="test"}[5m])) by (cluster_id, installation, pipeline, provider, namespace)
+```
+
+### Rule 3: 'without' Must Not Exclude Mandatory Labels
+```logql
+# ❌ INVALID - Excludes mandatory label
+sum(rate({job="test"}[5m])) without (cluster_id)
+
+# ✅ VALID - Only excludes non-mandatory labels
+sum(rate({job="test"}[5m])) without (pod, container)
+```
+
+## Extending with New Rules
+
+Adding new validation rules is straightforward:
+
+```go
+// Example: Check for expensive regex operations
+func (v *Validator) checkExpensiveOperations(expr syntax.Expr) {
+    syntax.Walk(expr, func(e syntax.Expr) {
+        if matcher, ok := e.(*syntax.MatchersExpr); ok {
+            // Check for problematic regex patterns
+            for _, m := range matcher.Mts {
+                if m.Type == labels.MatchRegexp && strings.HasPrefix(m.Value, ".*") {
+                    v.errors = append(v.errors, ValidationError{
+                        Message: "Regex starting with .* is expensive",
+                    })
+                }
+            }
+        }
+    })
+}
+```
+
+## Exit Codes
+
+- `0` - All validations passed
+- `1` - Validation errors found or runtime error
+
+## Troubleshooting
+
+### "failed to parse query"
+- Check LogQL syntax with lokitool first
+- Ensure query is valid LogQL
+
+### "No files specified"
+- Make sure you're passing file paths as arguments
+- Use quotes for glob patterns: `"**/*.logs.yml"`
+
+## Future Enhancements
+
+Possible additions:
+- [ ] Query performance hints (expensive regex, large time ranges)
+- [ ] Best practices checking (filter before parse, use indexed labels)
+- [ ] JSON output for CI integration
+- [ ] Configuration file support (.logql-lint.yaml)
+- [ ] Ignore patterns / exceptions
+- [ ] Label consistency across files
+- [ ] Integration with pre-commit hooks
