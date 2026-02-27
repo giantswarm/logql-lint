@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	github.com/fatih/color v1.18.0
-	github.com/grafana/loki/v3 v3.6.6
+	github.com/grafana/loki/v3 v3.6.7
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
