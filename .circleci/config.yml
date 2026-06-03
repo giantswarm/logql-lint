@@ -29,6 +29,7 @@ workflows:
       #           - main
       #           - master
       - architect/upload-release-assets:
+          binary: logql-lint
           context: architect
           requires:
             - go-build
