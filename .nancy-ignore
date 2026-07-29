@@ -1,6 +1,4 @@
-CVE-2025-47290 until=2026-07-29 # github.com/containerd/containerd/v2@v2.0.9
-CVE-2026-47262 until=2026-07-29 # github.com/containerd/containerd/v2@v2.0.9
-CVE-2026-53488 until=2026-07-29 # github.com/containerd/containerd/v2@v2.0.9
+CVE-2025-47290 until=2026-08-28 # github.com/containerd/containerd/v2@v2.0.10
 CVE-2026-56852 until=2026-08-27 # golang.org/x/text@v0.38.0
 CVE-2025-48431 until=2026-08-27 # github.com/apache/thrift@v0.22.0
 CVE-2026-41602 until=2026-08-27 # github.com/apache/thrift@v0.22.0
