@@ -181,3 +181,5 @@ require (
 replace github.com/hashicorp/memberlist => github.com/grafana/memberlist v0.3.1-0.20260515134459-1798cf41aca7
 
 replace github.com/yuin/goldmark v1.4.13 => github.com/yuin/goldmark v1.8.5
+
+replace github.com/klauspost/compress v1.18.6 => github.com/klauspost/compress v1.19.1
