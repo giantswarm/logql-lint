@@ -1,4 +1,2 @@
-CVE-2025-47290 until=2026-09-27 # github.com/containerd/containerd/v2@v2.0.10
-CVE-2026-56864 until=2026-09-27 # golang.org/x/mod@v0.37.0
-CVE-2026-56865 until=2026-09-27 # golang.org/x/mod@v0.37.0
-CVE-2026-56854 until=2026-10-01 # golang.org/x/crypto@v0.53.0
+CVE-2026-115804 until=2026-12-04 # github.com/hashicorp/consul/api@v1.33.4 since=2026-11-04
+CVE-2026-119566 until=2026-12-04 # github.com/prometheus/prometheus@v0.312.1-0.20260612131846-2ad3a8717015 since=2026-11-04
