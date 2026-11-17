@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Release binaries now include darwin/amd64, darwin/arm64, windows/amd64, and windows/arm64 alongside the existing linux targets. Windows binaries are named `template-windows-<arch>.exe`.
 - Update github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring to v0.95.2 (giantswarm/logql-lint#137)
+- Update github.com/grafana/loki/v3 to v3.7.10 (giantswarm/logql-lint#139)
 
 ## [0.0.2] - 2026-02-25
 
