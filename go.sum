@@ -179,8 +179,8 @@ github.com/grafana/jsonparser v0.0.0-20250909130937-5f438463be34 h1:sQ4hElLT1o+Y
 github.com/grafana/jsonparser v0.0.0-20250909130937-5f438463be34/go.mod h1:796sq+UcONnSlzA3RtlBZ+b/hrerkZXiEmO8oMjyRwY=
 github.com/grafana/loki/pkg/push v0.0.0-20250630054201-94c0ba7b0952 h1:rLzoJGDnoXsZV2j/2atL6OVk9AHluTbDOD8Ls9trtIA=
 github.com/grafana/loki/pkg/push v0.0.0-20250630054201-94c0ba7b0952/go.mod h1:ny/0bFitf8KNZkZfweaI4hmwb5XPhaFD2d0kVcyKmjo=
-github.com/grafana/loki/v3 v3.7.10 h1:4PD0v+FhYOXge4JXmQk7dK4YBq6ItZSx2xlfG8QU3nk=
-github.com/grafana/loki/v3 v3.7.10/go.mod h1:WMHisaoO9FiUm3hrqv0H0Mn7BbFW0ESYUY00hsrEYfM=
+github.com/grafana/loki/v3 v3.7.11 h1:kNrQ4lspfaN8ssdZB/5yq7EP2TUARse8zblbCQEHWvA=
+github.com/grafana/loki/v3 v3.7.11/go.mod h1:aratWNaabHbSFmjmwkRFocHM3/eQXMqxQ1aSz6xJYsc=
 github.com/grafana/memberlist v0.3.1-0.20260923065330-d17264b4a464 h1:bruBMVH+lvJk5nilKU0+eZmf79auE2P5iTebgQufeDs=
 github.com/grafana/memberlist v0.3.1-0.20260923065330-d17264b4a464/go.mod h1:hBsKPfoN6LPaWuxns4g43DDXMoktHb1q9R7aR+C7mPg=
 github.com/grafana/otel-profiling-go v0.7.0 h1:Q6CBLSgAnYmNQNNrj4ipG0S/K/K8iazA9E4kYRzZf0I=
